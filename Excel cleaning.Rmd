@@ -1,0 +1,214 @@
+---
+title: "Intro to Analysis"
+author: "Ben Chu"
+date: "March 4, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#This is a brief introduction into data analysis.
+In this small handout, I will explain how to do basic data cleaning and analysis. This instruction is meant to show you how data scientists approach turning data into usable information. I want to further preface by saying there are many ways to clean data but this way is fairly fast and clean.
+
+
+#First things to do is to find the data itself.  
+If you are using Google forms, please open the survey and switch over to the response section (next to questions) and click on the green icon next to the vertical dots.
+
+![](C:\Users\Branly Mclanbry\Desktop\intro5.png)  
+Great!
+
+It's your data!
+#Next thing we want to do is to make the variables we are using less complicated.
+We want to turn items into less confusing names because `"These.questions.are.about.yourself..please.answer.in.full...I.cried.many.times.this.year."` is a really long unecessary item. THANKS GOOGLE
+
+####This is usually row number 1, which is considered the headers for many data programs and sheets. 
+
+![](C:\Users\Branly Mclanbry\Desktop\intro6.png)  
+
+##Go ahead and just replace it with a shortened version of your variable name. And keep doing so for all your variables.
+
+![](C:\Users\Branly Mclanbry\Desktop\intro7.png)  
+Great
+## 
+
+#Let's turn some characters into numerics.  
+Now that we have understandable names, we need to create understandable and analyzable responses. This is because character codes can't be compared to each other.  
+
+Find the Edit dropdown and click "find and replace" or Ctrl+H  
+
+![](C:\Users\Branly Mclanbry\Desktop\intro8.png)  
+
+
+####Great, it should pop up a box with information. Please first select "Match entire cell contents".
+
+We want sheets to find information that says "strongly disagree" and replace it with "5"
+
+![](C:\Users\Branly Mclanbry\Desktop\intro9.png)  
+
+If you are using a Likert type scale, you would want  
+Strongly Disagree = 1
+Disagree = 2
+Neither Agree nor Disagree = 3
+Agree = 4
+Strongly Agree = 5
+
+####### _note_ If you have negatively worded items, you might want to reverse code them at this point. This means if an item is worded in this fashion `I do not think I am great`
+
+The scale would be the opposite.
+Strongly Disagree = 5
+Disagree = 4
+Neither Agree nor Disagree = 3
+Agree = 2
+Strongly Agree = 1
+
+![](C:\Users\Branly Mclanbry\Desktop\intro10.png)  
+
+Whew, that's alot of copy and pasting.  
+
+###Now we wanto do download it as a .csv and upload it into Rstudio.
+File>download as> comma seperated value. 
+![](C:\Users\Branly Mclanbry\Desktop\intro11.png)  
+
+Next thing to do is to important it into your environment. My file ended up being saved as `Santa.Correlation.csv`
+
+
+
+#Rstudio and data analysis
+###We want to import our data into Rstudio so we can run correlations and etc.
+![](C:\Users\Branly Mclanbry\Desktop\intro2.png)  
+
+You can also do this via the command line.
+```{r}
+Santa.Correlation <- read.csv("C:/Users/Branly Mclanbry/Desktop/Santa.Correlation.csv", header=TRUE)
+```
+Nice! it should appear in your global environment
+![](C:\Users\Branly Mclanbry\Desktop\intro3.png)
+
+##The first thing we want to do is to install and activate some packages. 
+
+Packages are pre-built user submitted functions that makes life easier. An analogy would be like buying furniture from IKEA. They provide you with everything you need to do what you want, you simply need to follow instructions.
+
+You can install it via the point and click install, but most people prefer to install it via the command line. The `tidyverse` package comes from a genius called `Hadley Wickham`. He's a r rockstar, a `r`ockstar because he essentially brainchilded code that makes it easier for people to understand and utilize. If I ever see him in public and I'm going to shake his hand and have him sign my forehead. 
+```{r eval = FALSE}
+install.packages("tidyverse")
+```
+![](C:\Users\Branly Mclanbry\Desktop\intro4.png)
+
+###Nice!You can activate the package by using this function.
+```{r warning = FALSE, message = FALSE}
+library(tidyverse)
+```
+
+From the `tidyverse` package, we want to use functions to create new variables based on previous variables.
+
+The `%>%` functions basically means "and then"".  
+The `mutate` function tells us to create a new variable based on previous inputs.  
+So the function below is telling us several things. "Please create a new variable called `niceness` using the information from `Santa.Correlation`.
+
+## Composite scores.  
+We can create a composite variable that is a combination of the items together. For example, we want to know the total niceness of a child on christmas night.  It's the total of nice items divided by the number of nice items.
+
+```{r}
+Santa.Correlation <- Santa.Correlation %>%
+  mutate(niceness = (cried + pouted + naughty + nice + bad + good + goodness4)/7)
+```
+
+Nice!  
+Now let's do it for our two scales.
+```{r}
+Santa.Correlation <- Santa.Correlation %>%
+  mutate(niceness = (cried + pouted + naughty + nice + bad + good + goodness4)/7,
+         somanygifts = (horns + drums + stockings + gifts)/4)
+```
+
+Cool bean! Now we have composite scores.   
+
+
+Cool bean! Now we have composite scores.   
+
+Let's just take a look at our data in terms of means or ranges. Use the `describe` function  from the `Hmisc` package and it'll provide a small summary of how our data looks. This function is important because it provides overall information during our write up. The function operates as `data$variable`. Essentially it is asking us to select our data, and from that data to choose a variable.  
+_note_ describe is a super common function that is terribly titled. We need to specify which function from which package we are using. To do so, we just use the name of the package, and the function within the "::" tells use which function. `package::function`.
+```{r warning = FALSE, message= FALSE}
+psych::describe(Santa.Correlation$niceness)
+psych::describe(Santa.Correlation$somanygifts)
+```
+
+##Reliability 
+We want to know about the internal reliability of our items. This concept gets at the idea of "are each items measuring what they are supposed to be mesuring?" For example, If I wanted to ask questions of how nice a child was, I would want to ask questions like "how nice are you" or "have you been good?". Asking a question like "What do you think about the color purple" might not be the best construct to ask for niceness.
+
+We will be using the package `psych` and within that, the function of `alpha` which will provide us with Cronbach's alpha.  
+We first need to be selecting the items we want to test using the `select` function.  
+Let's call our overall scale `naughtynicelist` which is selected by nice items from our `data.total`
+```{r}
+naughtynicelist <- Santa.Correlation %>%
+  select(nice,good,goodness4,cried,pouted,naughty,bad)
+```
+Super!
+How about another list for our overall gifts?
+```{r}
+overallgifts <- Santa.Correlation %>%
+  select(horns, drums, stockings, gifts)
+```
+Now let's look at the total Cronbach's Alpha, but first we need to load the package `psych`.
+```{r warning = FALSE, error = FALSE, message = FALSE}
+library(psych)
+alpha(naughtynicelist)
+alpha(overallgifts)
+```
+We will be looking at the raw_alpha number. What this is telling us is how closely tied together our items are.  
+I received a warning telling me that some items are negatively correlated. That might be the case that I forgot to reverse code them initially. However, in this case it might have been because I randomly selected answers.  
+
+####An APA write up might look like this.   
+
+Participants filled a 7-item Likert type scale which measures the naughty-niceness contingency. Items were adapted from Santa (1547) to fit in with an online population: (1) How nice were you. (2) How naughty are you. (1 = _Strongly Disagree_, 7 = _Strongly Agree_). The items of naughty-niceness were found to have a low internal consistency (_a_ = .43)
+
+
+##Correlations
+Let's take a look at the correlation between Santa's list and the amount of gifts received. I will be using the `cor.test` function with our two variables. The basic formula for finding correlations is the `data$variable` and the `$` requests the variable from the data. 
+```{r}
+cor.test(Santa.Correlation$niceness,Santa.Correlation$somanygifts)
+```
+
+Fantastic!  
+This output tells us several things!  
+The df = the number of participants.  
+P-value = the significance value
+95% confidence interval = the range of possible correlations that exists  
+cor = the correlation coefficient.  
+In this case, we find a significant correlation between how nice you are and the amount of gifts received.
+
+
+#### APA write up.
+
+
+There is a positive correlation between an increased amount of perceived self-niceness and frequency of gifts received. _r_ = .66, 95% CI [0.34,0.84], _p_ < .001. As niceness increases reported amount of gifts also increase. 
+
+
+###Plots
+It might be hard to conceptualize the data, so instead of using our thinking brains, let's use our eyeballs. I am using the `plot` function which is a simple plot of data points.
+```{r}
+plot(Santa.Correlation$somanygifts, Santa.Correlation$niceness)
+```   
+
+
+##Regression
+So now that we find a correlation between the two. Let's ask the question: Does niceness predict overall gifts received?
+
+We do so with the `lm` function which stands for linear model. The format is as follows. `independent variable ~ dependent variable, data`. Let's try it in action. In this particular function the `~` means "predicted by"
+```{r}
+mymodel <- lm(somanygifts~niceness,Santa.Correlation)
+```
+sweeeet
+let's find our more about our model by running a `summary` call on it.
+```{r}
+summary(mymodel)
+```
+_note_ important things to notice are the estimate and significance value. Essentially (this is the APA write up), we find that niceness significantly predicts gifts. _r_^2^ = .64, _F_ = 19.97, _p_ < .001, _b_ = .84. As people are nicer, we expect them to receive more gifts.
+
+Let's try that plot again, but this time add a `abline` on it. a abline is simply a straight line through the plot. "AB" stands for the intercept and the slope. 
+```{r}
+plot(Santa.Correlation$somanygifts, Santa.Correlation$niceness)
+abline(lm(somanygifts~niceness,Santa.Correlation))
+```
